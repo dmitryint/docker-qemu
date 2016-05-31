@@ -1,5 +1,7 @@
 # QEMU/KVM on Docker and CoreOS
 
+Original idea belongs to: Seán C. McCord (@Ulexus)
+
 ## Usage
 
 0. `docker pull intersoftlab/qemu:stable`
