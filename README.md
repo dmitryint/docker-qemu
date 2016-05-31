@@ -1,9 +1,18 @@
 # QEMU/KVM on Docker and CoreOS
 
+Original idea belongs to: Seán C. McCord (@Ulexus)
+
 ## Usage
 
-0. `docker pull ulexus/qemu`
-0. `docker run --privileged ulexus/qemu QEMU_OPTIONS`
+0. `docker pull intersoftlab/qemu:stable`
+0. 
+```
+docker run --privileged --net=host --pid=host --ipc=host \
+-e ETCD_ENDPOINTS=http://172.16.0.1:2379,http://172.16.0.2:2379 \
+-e LOCK=/kvm/%i/lock \
+-e BRIDGE_IF=qemu0 \
+intersoftlab/qemu:stable QEMU_OPTIONS
+```
 
 Note that `--privileged` is required in order to run with the kernel-level virtualization (kvm) optimization.
 
@@ -18,7 +27,7 @@ While this is obviously not ideal, it isn't actually _that_ bad, since you are r
 
 ## Why
 
-Basically, this allows me to run QEMU hosts with storage on RBD on my favorite server OS:  [http://coreos.com](CoreOS).
+It's better not to ask.  I really like CoreOS (http://coreos.com), and I am in the process of migrating all my servers over to it.  That means I need somewhere to put all my various full VMs.  While many components can be converted over to Docker-native formats, some customers want or need full VMs even still.  Rather than have a separate OpenStack or Corosync+libvirt system, I can now simply use CoreOS and fleet.
 
 ## Networking
 
@@ -36,7 +45,7 @@ NOTE:  using qemu's bridge networking with docker's `--net=host` with RBD block 
 
 ## Service file
 
-Also included in this repo is a service file, suitable for use with systemd (CoreOS and fleet), provided as an example.  You'll need to fill in your own values, of course, and customize it to your liking.
+Also included in this repo is a service file, suitable for use with systemd (CoreOS and fleet), provided as an example.  You'll need to fill in your own val
 
 ## Entrypoint script
 
@@ -49,3 +58,5 @@ If you intend to use the entrypoint script as is, it expects `etcd` to be popula
   * `/kvm/%i/rbd` - The RBD image (of the form `/<pool-name>/<rbd-name>`)
   * `/kvm/%i/spice_port` - The TCP port to use for the spice server
   * `/kvm/%i/extra_flags` - (optional) Free-form qemu flags to append
+  * `/kvm/%i/cloud-config` - (optional) Url for cloud-config file
+

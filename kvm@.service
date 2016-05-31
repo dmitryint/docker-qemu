@@ -1,21 +1,43 @@
 [Unit]
-Description=QEMU - VM%i
+Description=QEMU - VM %i
 After=docker.service
-
 [Service]
-EnvironmentFile=/etc/environment
-Environment=BRIDGE_IF=public
+Environment=NAME=%p-%i
+Environment="IMAGE=intersoftlab/qemu:stable"
+EnvironmentFile=-/etc/environment
+Environment=BRIDGE_IF=qemu0
 Environment=INSTANCE=%i
-Environment=HOSTNAME=%H
-ExecStartPre=-/usr/sbin/modprobe kvm
-ExecStartPre=-/usr/sbin/modprobe tun
-ExecStartPre=-/usr/bin/etcdctl mk /kvm/${INSTANCE}/host ${HOSTNAME}
-ExecStartPre=/usr/bin/etcdctl set --swap-with-value ${HOSTNAME} /kvm/${INSTANCE}/host ${HOSTNAME}
-ExecStart=/opt/bin/systemd-docker --env run --rm --privileged --net=host --pid=host --ipc=host -v /etc/ceph:/etc/ceph ulexus/qemu
-ExecStopPost=-/usr/bin/etcdctl rm --with-value ${HOSTNAME} /kvm/${INSTANCE}/host
-Restart=always
-RestartSec=10s
-Type=notify
-NotifyAccess=all
-TimeoutStartSec=120
-TimeoutStopSec=15
+Environment="VM_LOCK=/kvm/%i/lock"
+Environment="VM_RAM=$(etcdctl -C $ETCD_ENDPOINTS get /kvm/%i/ram)"
+Environment="VM_MAC=$(etcdctl -C $ETCD_ENDPOINTS get /kvm/%i/mac)"
+Environment="VM_RBD=$(etcdctl -C $ETCD_ENDPOINTS get /kvm/%i/rbd)"
+Environment="VM_CLOUD_CONFIG=$(etcdctl -C $ETCD_ENDPOINTS get /kvm/%i/cloud-config)"
+Environment="SPICE_PORT=$(etcdctl -C $ETCD_ENDPOINTS get /kvm/%i/spice_port)"
+Environment="CPU_FLAG=qemu64,+ssse3,+sse4.1,+sse4.2,+x2apic"
+ExecStartPre=/bin/sh -c "docker pull ${IMAGE}"
+ExecStartPre=-/bin/sh -c "docker rm -f ${NAME}"
+ExecStart=/bin/sh -c "docker run -i --rm --name='${NAME}' --privileged --net=host \
+--pid=host --ipc=host \
+-v /etc/ceph:/etc/ceph:ro \
+-e ETCD_ENDPOINTS=$ETCD_ENDPOINTS \
+-e LOCK=$VM_LOCK \
+-e BRIDGE_IF=qemu0 \
+$(test ! -z \"$VM_CLOUD_CONFIG\" && echo \"-e CLOUD_CONFIG=${VM_CLOUD_CONFIG}\") \
+${IMAGE} \
+-name ${INSTANCE} \
+-cpu ${CPU_FLAG} \
+-vga qxl -spice port=${SPICE_PORT},addr=127.0.0.1,disable-ticketing \
+-k en-us -m ${VM_RAM} \
+-drive format=rbd,file=rbd:${VM_RBD},cache=writeback,if=virtio \
+-drive file=/iso/virtio-win.iso,media=cdrom \
+-netdev bridge,br=${BRIDGE_IF},id=net0 \
+-device virtio-net,netdev=net0,mac=${VM_MAC} \
+-balloon virtio \
+-machine accel=kvm \
+-watchdog i6300esb \
+-watchdog-action debug"
+RestartSec=90s
+SuccessExitStatus=1 9
+Restart=on-abnormal
+TimeoutStartSec=0
+TimeoutStopSec=10m
