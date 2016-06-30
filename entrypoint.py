@@ -17,7 +17,7 @@ if __name__ == "__main__":
                                 'host': endpoint.split(':')[1],
                                 'port': int(endpoint.split(':')[2]),
                             } for endpoint in os.environ.get('ETCD_ENDPOINTS').replace('/','').split(',')]
-            ),
+            ) if 'LOCK' in os.environ else None,
             cloud_config_url=os.environ.get('CLOUD_CONFIG', None),
             bridge_if=os.environ.get('BRIDGE_IF', 'qemu0'),
             shutdown_timeout=300
