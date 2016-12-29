@@ -2,6 +2,11 @@
 
 Original idea belongs to: Seán C. McCord (@Ulexus)
 
+## Supported tags and respective Dockerfile links ##
+  - `2.6`, `stable` [(Dockerfile)](https://github.com/dmitryint/docker-qemu/blob/stable/Dockerfile)
+  - `2.7` [(Dockerfile)](https://github.com/dmitryint/docker-qemu/blob/qemu_2.7/Dockerfile)
+  - `2.8`, `latest` [(Dockerfile)](https://github.com/dmitryint/docker-qemu/blob/master/Dockerfile)
+
 ## Usage
 
 0. `docker pull intersoftlab/qemu:stable`
