@@ -1,6 +1,6 @@
 # QEMU/KVM 
 # VERSION 0.3
-FROM ceph/base
+FROM ceph/daemon
 MAINTAINER d.p.karpov@gmail.com
 
 ENV QEMU_VERSION 2.8.0
